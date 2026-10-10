@@ -1,0 +1,25 @@
+# Unity
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emory[Cc]aptures/
+*.csproj
+*.sln
+*.suo
+*.user
+*.pidb
+*.booproj
+.vs/
+.idea/
+.vscode/
+*.apk
+*.aab
+# Downloaded MediaPipe models (fetched by scripts/fetch-models.sh and by CI)
+*.task
+# Generated at build time
+/Assets/Resources/ShaderVariantAnchor*
+/Assets/Resources/ShaderVariantAnchor/
