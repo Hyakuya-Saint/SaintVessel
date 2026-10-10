@@ -1,0 +1,15 @@
+# Godot
+.godot/
+.import/
+*.translation
+# Build output
+/build/
+/android/build/
+/android/.build_version
+/plugin/build/
+/plugin/.gradle/
+*.apk
+*.aab
+*.aar
+# Downloaded MediaPipe models (tools/fetch-models.sh, CI)
+*.task

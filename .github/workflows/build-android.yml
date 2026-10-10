@@ -1,0 +1,85 @@
+name: Build Saint Vessel (Android APK, Godot)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to publish the GitHub Release
+
+concurrency:
+  group: build-android-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: "4.3"
+  GODOT_RELEASE: "stable"
+
+jobs:
+  build:
+    name: Godot Android export
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK packages
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.5"
+
+      - name: Download MediaPipe models
+        run: bash tools/fetch-models.sh
+
+      - name: Build tracking plugin (AAR)
+        run: bash tools/build-plugin.sh
+
+      - name: Install Godot and export templates
+        run: bash tools/ci-install-godot.sh
+
+      - name: Configure Android export
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_USER: ${{ secrets.ANDROID_KEYSTORE_USER }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: bash tools/ci-configure-android.sh
+
+      - name: Import project
+        run: godot --headless --path . --import || true
+
+      - name: Export APK
+        run: |
+          mkdir -p build
+          godot --headless --path . --export-release "Android" build/SaintVessel.apk
+          ls -lh build
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SaintVessel-apk
+          path: build/SaintVessel.apk
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Saint Vessel build ${{ github.run_number }}
+          body: |
+            Automated Godot build of commit ${{ github.sha }}.
+            Install `SaintVessel.apk` on an Android 8.0+ (arm64) device and allow the camera.
+          files: build/SaintVessel.apk
